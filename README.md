@@ -20,6 +20,23 @@ the derived data, the dead ends, and one mistake I caught before it shipped.
 | **Backtest** | 0.21 pp national RMSE replaying 2022 with realistic partial counts (summing the feed naively: 4.3 pp) |
 | **Stack** | Python (NumPy, SciPy, pandas, scikit-learn, XGBoost, PyTorch), a hand-written DER parser, browser JS for the live feed |
 
+## Decisions I made
+
+The code was written with AI coding agents. These were my calls:
+
+- **Predict the swing, not the vote.** Model each zone's change from round 1 to round 2 instead of its vote share, so
+  every zone starts from a strong, already-known baseline.
+- **Use partial zones as evidence.** Treat a partially counted zone as a biased, noisy measurement, instead of waiting
+  for complete zones or summing the feed as if it were final.
+- **Test across elections.** Use 2018 for development and hold out 2022. After the leakage bug, history features may
+  only come from *earlier* elections.
+- **Make the backtest match election night.** Rebuild the evaluator to simulate partial counts, calibrated to TSE's
+  official counting curve.
+- **Read the bulletins before the count opened.** Decode the signed ballot-box bulletins that were already public to get
+  an estimate before the totals were released.
+- **Run the research as a competition.** Specialist agents built models against one fixed evaluator, with an
+  append-only leaderboard. This made the comparison between methods fair and kept results from being overwritten.
+
 ---
 
 ## 1. The problem: the early count is not a sample
@@ -34,7 +51,7 @@ between rounds is where third-party, blank and null voters go, and who turns out
 from round 1 in each zone**, not the level of the vote. Round 1 is already known for every zone, so each zone has a
 strong baseline. The model only has to learn how the swing varies across the country.
 
-## 2. A research harness with specialist agents ([docs/01-research-harness.md](docs/01-research-harness.md))
+## 2. How I ran the research: a competition with a fixed evaluator ([docs/01-research-harness.md](docs/01-research-harness.md))
 
 I ran the research as a small, structured competition. A **lead agent** kept a shared knowledge base and set each
 round's priorities. Four **specialist agents** (frequentist, Bayesian, ML, time series) each built models against the
@@ -128,6 +145,8 @@ figures/   make_figures.py and its output
 *Notes:* code comments and some variable names are in Portuguese (`zona` = zone, `secao` = polling section,
 `virada` = swing, `apurado` = counted). The research harness was run with AI coding agents (Claude Code). I set the
 questions, the rules and the decisions, and every number in this README comes from scripts in this repo.
+The project was developed and run on my machine during election week and published afterwards as a single commit,
+so the git history does not show the order of the work. `docs/` and the append-only leaderboards in `harness/` do.
 
 ---
 
